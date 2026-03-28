@@ -45,5 +45,16 @@ session_start();
             <button type="submit">=</button>
         </div>
     </form>
+<script>
+    const display = document.getElementById('display');
+
+    function appendValue(value) {
+        display.value += value;
+    }
+
+    function clearDisplay() {
+        display.value = '';
+    }
+</script>
 </body>
 </html>
