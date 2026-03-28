@@ -161,12 +161,141 @@ function calculateSq($val)
 
     return calculateSq($newVal);
 }
-$result = '';
+function trimSpacesManual($str)
+{
+    $result = '';
+    for ($i = 0; $i < strlen($str); $i++) {
+        if ($str[$i] !== ' ') {
+            $result .= $str[$i];
+        }
+    }
+    return $result;
+}
+
+function hasOnlyAllowedChars($val)
+{
+    if ($val === '') return false;
+
+    for ($i = 0; $i < strlen($val); $i++) {
+        $ch = $val[$i];
+
+        if (
+            !isDigitChar($ch) &&
+            $ch !== '+' &&
+            $ch !== '-' &&
+            $ch !== '*' &&
+            $ch !== '/' &&
+            $ch !== '(' &&
+            $ch !== ')' &&
+            $ch !== '.'
+        ) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function hasEmptyBrackets($val)
+{
+    for ($i = 0; $i < strlen($val) - 1; $i++) {
+        if ($val[$i] === '(' && $val[$i + 1] === ')') {
+            return true;
+        }
+    }
+    return false;
+}
+
+function hasInvalidSequence($val)
+{
+    $operators = ['+', '-', '*', '/'];
+
+    $len = strlen($val);
+    if ($len === 0) return true;
+
+    if (in_array($val[0], $operators, true)) {
+        return true;
+    }
+
+    if (in_array($val[$len - 1], $operators, true)) {
+        return true;
+    }
+
+    for ($i = 0; $i < $len - 1; $i++) {
+        $a = $val[$i];
+        $b = $val[$i + 1];
+
+        if (in_array($a, $operators, true) && in_array($b, $operators, true)) {
+            return true;
+        }
+
+        if ($a === '(' && in_array($b, $operators, true)) {
+            return true;
+        }
+
+        if (in_array($a, $operators, true) && $b === ')') {
+            return true;
+        }
+
+        if ((isDigitChar($a) || $a === '.') && $b === '(') {
+            return true;
+        }
+
+        if ($a === ')' && (isDigitChar($b) || $b === '.')) {
+            return true;
+        }
+
+        if ($a === ')' && $b === '(') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function validateExpression($val)
+{
+    if ($val === '') {
+        return 'Ошибка: выражение не введено';
+    }
+
+    if (!hasOnlyAllowedChars($val)) {
+        return 'Ошибка: недопустимые символы';
+    }
+
+    if (!SqValidator($val)) {
+        return 'Ошибка: неправильная расстановка скобок';
+    }
+
+    if (hasEmptyBrackets($val)) {
+        return 'Ошибка: пустые скобки';
+    }
+
+    if (hasInvalidSequence($val)) {
+        return 'Ошибка: неправильная последовательность символов';
+    }
+
+    return true;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['val'])) {
     $expr = $_POST['val'];
-    $result = calculateSq($expr);
+    $expr = trimSpacesManual($expr);
+
+    $validation = validateExpression($expr);
+
+    if ($validation === true) {
+        $result = calculateSq($expr);
+    } else {
+        $result = $validation;
+    }
+
+    header('Location: index.php?expr=' . urlencode($expr) . '&result=' . urlencode((string)$result));
+    exit;
 }
+
+$currentExpr = isset($_GET['expr']) ? $_GET['expr'] : '';
+$currentResult = isset($_GET['result']) ? $_GET['result'] : '';
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -215,14 +344,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['val'])) {
             border-radius: 10px;
             cursor: pointer;
         }
+        .result-box {
+            min-height: 40px;
+            padding: 10px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            background: #eef3ff;
+            font-size: 18px;
+            word-break: break-word;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>Калькулятор</h1>
     <form method="POST" action="index.php">
-        <input type="text" id="display" name="val" readonly>
-        
+        <input type="text" id="display" name="val" class="display" value="<?php echo htmlspecialchars($currentExpr); ?>" readonly >
+        <div class="result-box">
+            <?php
+            if ($result !== '') {
+                echo htmlspecialchars($currentResult);
+            } else {
+                echo 'Пока нет результата';
+            }
+            ?>
+        </div>
         <div>
             <button type="button" onclick="appendValue('7')">7</button>
             <button type="button" onclick="appendValue('8')">8</button>
@@ -249,7 +395,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['val'])) {
         </div>
     </form>
     <div class="result">
-        Результат: <?php echo htmlspecialchars((string)$result); ?>
+        value="<?php echo htmlspecialchars($currentExpr); ?>"
     </div>
 </div>
 <script>
