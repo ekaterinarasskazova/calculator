@@ -277,6 +277,122 @@ function validateExpression($val)
 
     return true;
 }
+function trimSpacesManual($str)
+{
+    $result = '';
+    for ($i = 0; $i < strlen($str); $i++) {
+        if ($str[$i] !== ' ') {
+            $result .= $str[$i];
+        }
+    }
+    return $result;
+}
+
+function hasOnlyAllowedChars($val)
+{
+    if ($val === '') return false;
+
+    for ($i = 0; $i < strlen($val); $i++) {
+        $ch = $val[$i];
+
+        if (
+            !isDigitChar($ch) &&
+            $ch !== '+' &&
+            $ch !== '-' &&
+            $ch !== '*' &&
+            $ch !== '/' &&
+            $ch !== '(' &&
+            $ch !== ')' &&
+            $ch !== '.'
+        ) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function hasEmptyBrackets($val)
+{
+    for ($i = 0; $i < strlen($val) - 1; $i++) {
+        if ($val[$i] === '(' && $val[$i + 1] === ')') {
+            return true;
+        }
+    }
+    return false;
+}
+
+function hasInvalidSequence($val)
+{
+    $operators = ['+', '-', '*', '/'];
+    $len = strlen($val);
+
+    if ($len === 0) return true;
+
+    if (in_array($val[0], $operators, true)) {
+        return true;
+    }
+
+    if (in_array($val[$len - 1], $operators, true)) {
+        return true;
+    }
+
+    for ($i = 0; $i < $len - 1; $i++) {
+        $a = $val[$i];
+        $b = $val[$i + 1];
+
+        if (in_array($a, $operators, true) && in_array($b, $operators, true)) {
+            return true;
+        }
+
+        if ($a === '(' && in_array($b, $operators, true)) {
+            return true;
+        }
+
+        if (in_array($a, $operators, true) && $b === ')') {
+            return true;
+        }
+
+        if ((isDigitChar($a) || $a === '.') && $b === '(') {
+            return true;
+        }
+
+        if ($a === ')' && (isDigitChar($b) || $b === '.')) {
+            return true;
+        }
+
+        if ($a === ')' && $b === '(') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function validateExpression($val)
+{
+    if ($val === '') {
+        return 'Ошибка: выражение не введено';
+    }
+
+    if (!hasOnlyAllowedChars($val)) {
+        return 'Ошибка: недопустимые символы';
+    }
+
+    if (!SqValidator($val)) {
+        return 'Ошибка: неправильная расстановка скобок';
+    }
+
+    if (hasEmptyBrackets($val)) {
+        return 'Ошибка: пустые скобки';
+    }
+
+    if (hasInvalidSequence($val)) {
+        return 'Ошибка: неправильная последовательность символов';
+    }
+
+    return true;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['val'])) {
     $expr = $_POST['val'];
@@ -361,8 +477,9 @@ $currentResult = isset($_GET['result']) ? $_GET['result'] : '';
     <form method="POST" action="index.php">
         <input type="text" id="display" name="val" class="display" value="<?php echo htmlspecialchars($currentExpr); ?>" readonly >
         <div class="result-box">
+            Результат:
             <?php
-            if ($result !== '') {
+            if ($currentResult !== '') {
                 echo htmlspecialchars($currentResult);
             } else {
                 echo 'Пока нет результата';
@@ -395,7 +512,7 @@ $currentResult = isset($_GET['result']) ? $_GET['result'] : '';
         </div>
     </form>
     <div class="result">
-        value="<?php echo htmlspecialchars($currentExpr); ?>"
+        Результат: <?php echo htmlspecialchars((string)$currentResult); ?>
     </div>
 </div>
 <script>
