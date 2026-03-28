@@ -1,5 +1,8 @@
 <?php
 session_start();
+if (!isset($_SESSION['history'])) {
+    $_SESSION['history'] = [];
+}
 function isDigitChar($ch)
 {
     return $ch >= '0' && $ch <= '9';
@@ -277,122 +280,6 @@ function validateExpression($val)
 
     return true;
 }
-function trimSpacesManual($str)
-{
-    $result = '';
-    for ($i = 0; $i < strlen($str); $i++) {
-        if ($str[$i] !== ' ') {
-            $result .= $str[$i];
-        }
-    }
-    return $result;
-}
-
-function hasOnlyAllowedChars($val)
-{
-    if ($val === '') return false;
-
-    for ($i = 0; $i < strlen($val); $i++) {
-        $ch = $val[$i];
-
-        if (
-            !isDigitChar($ch) &&
-            $ch !== '+' &&
-            $ch !== '-' &&
-            $ch !== '*' &&
-            $ch !== '/' &&
-            $ch !== '(' &&
-            $ch !== ')' &&
-            $ch !== '.'
-        ) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-function hasEmptyBrackets($val)
-{
-    for ($i = 0; $i < strlen($val) - 1; $i++) {
-        if ($val[$i] === '(' && $val[$i + 1] === ')') {
-            return true;
-        }
-    }
-    return false;
-}
-
-function hasInvalidSequence($val)
-{
-    $operators = ['+', '-', '*', '/'];
-    $len = strlen($val);
-
-    if ($len === 0) return true;
-
-    if (in_array($val[0], $operators, true)) {
-        return true;
-    }
-
-    if (in_array($val[$len - 1], $operators, true)) {
-        return true;
-    }
-
-    for ($i = 0; $i < $len - 1; $i++) {
-        $a = $val[$i];
-        $b = $val[$i + 1];
-
-        if (in_array($a, $operators, true) && in_array($b, $operators, true)) {
-            return true;
-        }
-
-        if ($a === '(' && in_array($b, $operators, true)) {
-            return true;
-        }
-
-        if (in_array($a, $operators, true) && $b === ')') {
-            return true;
-        }
-
-        if ((isDigitChar($a) || $a === '.') && $b === '(') {
-            return true;
-        }
-
-        if ($a === ')' && (isDigitChar($b) || $b === '.')) {
-            return true;
-        }
-
-        if ($a === ')' && $b === '(') {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-function validateExpression($val)
-{
-    if ($val === '') {
-        return 'Ошибка: выражение не введено';
-    }
-
-    if (!hasOnlyAllowedChars($val)) {
-        return 'Ошибка: недопустимые символы';
-    }
-
-    if (!SqValidator($val)) {
-        return 'Ошибка: неправильная расстановка скобок';
-    }
-
-    if (hasEmptyBrackets($val)) {
-        return 'Ошибка: пустые скобки';
-    }
-
-    if (hasInvalidSequence($val)) {
-        return 'Ошибка: неправильная последовательность символов';
-    }
-
-    return true;
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['val'])) {
     $expr = $_POST['val'];
@@ -405,6 +292,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['val'])) {
     } else {
         $result = $validation;
     }
+    $_SESSION['history'][] = $expr . ' = ' . $result;
 
     header('Location: index.php?expr=' . urlencode($expr) . '&result=' . urlencode((string)$result));
     exit;
@@ -469,6 +357,28 @@ $currentResult = isset($_GET['result']) ? $_GET['result'] : '';
             font-size: 18px;
             word-break: break-word;
         }
+        .history {
+            margin-top: 24px;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .history h2 {
+            margin-top: 0;
+            font-size: 20px;
+        }
+
+        .history-item {
+            padding: 6px 0;
+            border-bottom: 1px solid #e5e5e5;
+            word-break: break-word;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -511,6 +421,16 @@ $currentResult = isset($_GET['result']) ? $_GET['result'] : '';
             <button type="submit" style="grid-column: span 3;">=</button>
         </div>
     </form>
+    <div class="history">
+        <h2>История вычислений</h2>
+        <?php if (count($_SESSION['history']) === 0): ?>
+            <div class="history-item">История пуста</div>
+        <?php else: ?>
+            <?php foreach ($_SESSION['history'] as $item): ?>
+                <div class="history-item"><?php echo htmlspecialchars($item); ?></div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
     <div class="result">
         Результат: <?php echo htmlspecialchars((string)$currentResult); ?>
     </div>
