@@ -339,6 +339,7 @@ $currentResult = isset($_GET['result']) ? $_GET['result'] : '';
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
+            margin-top: 10px;
         }
 
         button {
@@ -347,6 +348,18 @@ $currentResult = isset($_GET['result']) ? $_GET['result'] : '';
             border: none;
             border-radius: 10px;
             cursor: pointer;
+            background: #e8e8e8;
+        }
+        button:hover {
+            background: #d9d9d9;
+        }
+        .equal {
+            background: #4caf50;
+            color: white;
+        }
+        .clear {
+            background: #f44336;
+            color: white;
         }
         .result-box {
             min-height: 40px;
@@ -396,7 +409,7 @@ $currentResult = isset($_GET['result']) ? $_GET['result'] : '';
             }
             ?>
         </div>
-        <div>
+        <div class="buttons">
             <button type="button" onclick="appendValue('7')">7</button>
             <button type="button" onclick="appendValue('8')">8</button>
             <button type="button" onclick="appendValue('9')">9</button>
@@ -417,8 +430,9 @@ $currentResult = isset($_GET['result']) ? $_GET['result'] : '';
             <button type="button" onclick="appendValue(')')">)</button>
             <button type="button" onclick="appendValue('+')">+</button>
         
-            <button type="button" onclick="clearDisplay()">C</button>
-            <button type="submit" style="grid-column: span 3;">=</button>
+            <button type="button" class="clear" onclick="clearDisplay()">C</button>
+            <button type="submit" class="equal" style="grid-column: span 3;">=</button>
+            
         </div>
     </form>
     <div class="history">
